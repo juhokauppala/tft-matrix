@@ -1,0 +1,32 @@
+@font-face {
+  font-family: 'Ubuntu';
+  font-weight: 900;
+  src: local('Ubuntu'), url('./assets/ubuntu/Ubuntu-Regular.ttf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Ubuntu';
+  font-weight: 100;
+  src: local('Ubuntu-Light'), url('./assets/ubuntu/Ubuntu-Light.ttf') format('opentype');
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: small;
+}
+
+p, span, div, td {
+  font-family: 'Ubuntu', 'sans-serif';
+  font-weight: 100
+}
+
+table {
+  border-spacing: 0;
+}
+
+td {
+  padding: 0;
+  border-collapse: collapse;
+}
