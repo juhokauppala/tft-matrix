@@ -9,15 +9,19 @@ type SquareProps = {
 const color = (cost: number) => {
   switch (cost) {
     case 1:
-      return "rgb(41, 49, 58)";
+      return "rgb(67, 72, 77)";
     case 2:
-      return "rgb(15, 77, 44)";
+      return "rgb(15, 125, 64)";
     case 3:
-      return "rgb(4, 45, 138)";
+      return "rgb(31, 91, 230)";
     case 4:
-      return "rgb(114, 26, 84)";
+      return "rgb(175, 49, 133)";
     case 5:
-      return "rgb(156, 103, 15)";
+      return "rgb(175, 116, 22)";
+    case 6:
+      return "rgb(216, 255, 252)";
+    default:
+      throw Error(`Unexpected cost: ${cost}`);
   }
 };
 
@@ -34,10 +38,10 @@ export const Square = (props: SquareProps) => {
           height: "2.5em",
           border: `solid 1px ${color(props.champions[0].cost)}`,
           overflow: "hidden",
-          borderCollapse: "separate",
-          backgroundImage: `radial-gradient(circle, white 50%, ${color(
+          boxShadow: `inset 0 0 0.25em 0.25em ${color(
             props.champions[0].cost
-          )} 90%)`,
+          )}`,
+          backgroundColor: "white",
         }}
       >
         <img
@@ -93,7 +97,7 @@ export const Square = (props: SquareProps) => {
             }}
           >
             {props.champions.map((c) => (
-              <Square champions={[c]} />
+              <Square champions={[c]} key={c.name} />
             ))}
           </div>
         </>

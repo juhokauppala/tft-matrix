@@ -1,106 +1,69 @@
-import rawData from "./assets/cdragon.json";
 import { Square } from "./Square";
 import "./App.css";
 // import { ColorScale } from "./ColorScale";
 import { TotalNumber } from "./TotalNumber";
 import { useState } from "react";
+import { SingleSetData, useData } from "./cdragon";
+import { process } from "./appLogic";
 
-
-
-
-
-const ORIGINS = [
-  "Yordle",
-  "Void",
-  "Demacia",
-  "Noxus",
-  "Shurima",
-  "Piltover",
-  "Shadow Isles",
-  "Freljord",
-  "Targon",
-  "Zaun",
-  "Ionia",
-  "Darkin",
-  "Wanderer",
-];
-
-const data = (rawData as Data).sets["9"];
-
-const championsByTrait = (
-  trait: string | Trait,
-  subset: Champion[] = data.champions
-) => {
-  const _trait = typeof trait === "string" ? trait : trait.name;
-  const list = subset.filter((c) => c.traits.includes(_trait));
-  const uniques = [
-    ...new Map<String, Champion>(list.map((c) => [c.name, c])).values(),
-  ];
-  return {
-    champions: uniques,
-    byTrait: (nTrait: typeof trait) => championsByTrait(nTrait, uniques),
-    byAnyTrait: (...nTraits: (typeof trait)[]) => [
-      ...new Map(
-        nTraits
-          .filter((t) => t !== trait)
-          .flatMap((ntr) => championsByTrait(ntr, uniques).champions)
-          .map((c) => [c.name, c])
-      ).values(),
-    ],
+const filterFunctions = (data: SingleSetData) => {
+  const championsByTrait = (
+    trait: string | Trait,
+    subset: Champion[] = data.champions
+  ) => {
+    const _trait = typeof trait === "string" ? trait : trait.name;
+    const list = subset.filter((c) => c.traits.includes(_trait));
+    const uniques = [
+      ...new Map<string, Champion>(list.map((c) => [c.name, c])).values(),
+    ];
+    return {
+      champions: uniques,
+      byTrait: (nTrait: typeof trait) => championsByTrait(nTrait, uniques),
+      byAnyTrait: (...nTraits: (typeof trait)[]) => [
+        ...new Map(
+          nTraits
+            .filter((t) => t !== trait)
+            .flatMap((ntr) => championsByTrait(ntr, uniques).champions)
+            .map((c) => [c.name, c])
+        ).values(),
+      ],
+    };
   };
+
+  const alphaCmp = (a: Trait, b: Trait) => a.name.localeCompare(b.name);
+  const champCmp = (others: Trait[]) => (a: Trait, b: Trait) =>
+    championsByTrait(b).byAnyTrait(...others).length -
+    championsByTrait(a).byAnyTrait(...others).length;
+
+  return { championsByTrait, alphaCmp, champCmp };
 };
-
-const alphaCmp = (a: Trait, b: Trait) => a.name.localeCompare(b.name);
-const champCmp = (others: Trait[]) => (a: Trait, b: Trait) =>
-  championsByTrait(b).byAnyTrait(...others).length -
-  championsByTrait(a).byAnyTrait(...others).length;
-
-const originTraits = data.traits.filter((t) =>
-  ORIGINS.map((o) => o.toLowerCase()).includes(t.name.toLowerCase())
-);
-const typeTraits = data.traits.filter(
-  (t) => !ORIGINS.map((o) => o.toLowerCase()).includes(t.name.toLowerCase())
-);
-
-const champsWith3Traits = data.champions.filter((c) => c.traits.length > 2);
-const typeTraits3: Trait[] = [];
-const originTraits3: Trait[] = [];
-champsWith3Traits.forEach((c) => {
-  const _typeTraits = c.traits
-    .map((t) => typeTraits.find((ttr) => ttr.name === t))
-    .filter((t) => t) as Trait[];
-  const _originTraits = c.traits
-    .map((t) => originTraits.find((otr) => otr.name === t))
-    .filter((t) => t) as Trait[];
-
-  if (_typeTraits.length > 1) typeTraits3.push(..._typeTraits);
-  if (_originTraits.length > 1) originTraits3.push(..._originTraits);
-});
-
-const typeTraits3Unique = [
-  ...new Map<string, Trait>(typeTraits3.map((t) => [t.name, t])).values(),
-];
-const originTraits3Unique = [
-  ...new Map<string, Trait>(originTraits3.map((t) => [t.name, t])).values(),
-];
 
 const Table = ({
   horizontalTraits,
   verticalTraits,
   symmetric,
+  fns,
 }: {
   horizontalTraits: Trait[];
   verticalTraits: Trait[];
   symmetric: boolean;
+  fns: ReturnType<typeof filterFunctions>;
 }) => {
   const [sortByChamps, setSortByChamps] = useState<boolean>(false);
 
+  verticalTraits = verticalTraits.filter(
+    (t) => fns.championsByTrait(t).byAnyTrait(...horizontalTraits).length > 0
+  );
+  horizontalTraits = horizontalTraits.filter(
+    (t) => fns.championsByTrait(t).byAnyTrait(...verticalTraits).length > 0
+  );
+
   if (sortByChamps) {
-    horizontalTraits.sort(champCmp(verticalTraits));
-    verticalTraits.sort(champCmp(horizontalTraits));
+    horizontalTraits.sort(fns.champCmp(verticalTraits));
+    verticalTraits.sort(fns.champCmp(horizontalTraits));
   } else {
-    horizontalTraits.sort(alphaCmp);
-    verticalTraits.sort(alphaCmp);
+    horizontalTraits.sort(fns.alphaCmp);
+    verticalTraits.sort(fns.alphaCmp);
   }
   if (symmetric) horizontalTraits = [...horizontalTraits].reverse();
 
@@ -172,7 +135,7 @@ const Table = ({
               </p>
               <TotalNumber
                 number={
-                  championsByTrait(htr).byAnyTrait(...verticalTraits).length
+                  fns.championsByTrait(htr).byAnyTrait(...verticalTraits).length
                 }
               />
             </td>
@@ -209,7 +172,8 @@ const Table = ({
               </div>
               <TotalNumber
                 number={
-                  championsByTrait(vtr).byAnyTrait(...horizontalTraits).length
+                  fns.championsByTrait(vtr).byAnyTrait(...horizontalTraits)
+                    .length
                 }
               />
             </td>
@@ -228,7 +192,7 @@ const Table = ({
                   />
                 ) : (
                   <Square
-                    champions={championsByTrait(htr).byTrait(vtr).champions}
+                    champions={fns.championsByTrait(htr).byTrait(vtr).champions}
                   />
                 )}
               </td>
@@ -241,6 +205,12 @@ const Table = ({
 };
 
 function App() {
+  const { data } = useData();
+  if (!data) return <div>loading...</div>;
+  const { originTraits, typeTraits, originTraits3Unique, typeTraits3Unique } =
+    process(data);
+
+  const filterFns = filterFunctions(data);
   return (
     <div
       style={{
@@ -255,16 +225,19 @@ function App() {
         horizontalTraits={originTraits}
         verticalTraits={typeTraits}
         symmetric={false}
+        fns={filterFns}
       />
       <Table
         horizontalTraits={originTraits3Unique}
         verticalTraits={originTraits3Unique}
         symmetric={true}
+        fns={filterFns}
       />
       <Table
         horizontalTraits={typeTraits3Unique}
         verticalTraits={typeTraits3Unique}
         symmetric={true}
+        fns={filterFns}
       />
     </div>
   );
