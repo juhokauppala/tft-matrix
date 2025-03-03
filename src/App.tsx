@@ -5,28 +5,9 @@ import "./App.css";
 import { TotalNumber } from "./TotalNumber";
 import { useState } from "react";
 
-type Trait = {
-  name: string;
-  desc: string;
-  icon: string;
-  effects: {
-    minUnits: number;
-    maxUnits: number;
-    style: number;
-  }[];
-};
 
-type Data = {
-  items: unknown;
-  setData: unknown;
-  sets: {
-    "9": {
-      champions: Champion[];
-      name: string;
-      traits: Trait[];
-    };
-  };
-};
+
+
 
 const ORIGINS = [
   "Yordle",
